@@ -1,17 +1,14 @@
-package org.depo.controllers;
+package org.depo.model;
 
 import org.apache.log4j.Logger;
-import org.depo.model.Employee;
-import org.depo.model.Unit;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
-import javax.xml.bind.JAXBException;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -20,14 +17,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-@Controller
-public class MainController {
+public class EmployeeParser {
 
-    private final static Logger LOGGER = Logger.getLogger(MainController.class);
+    private final static Logger LOGGER = Logger.getLogger(EmployeeParser.class);
 
-    @RequestMapping(value = "/")
-    public String userIface() throws JAXBException {
-
+    public static void parse() {
         try {
             DocumentBuilderFactory docBuilderFactory = DocumentBuilderFactory.newInstance();
             DocumentBuilder docBuilder = docBuilderFactory.newDocumentBuilder();
@@ -42,26 +36,24 @@ public class MainController {
             List<Node> units = getNodeList("unit", employees.getChildNodes());
             for (Node u: units) {
                 Unit unit = createUnit(u);
+                EmployeeList.getInstance().addNode(unit);
                 LOGGER.debug("\n" + unit);
             }
-        } catch (ParserConfigurationException e1) {
-            e1.printStackTrace();
-        } catch (IOException e1) {
-            e1.printStackTrace();
-        } catch (SAXException e1) {
-            e1.printStackTrace();
+        } catch (ParserConfigurationException e) {
+            LOGGER.error(e.getMessage());
+        } catch (IOException e) {
+            LOGGER.error(e.getMessage());
+        } catch (SAXException e) {
+            LOGGER.error(e.getMessage());
         }
-
-        return "index";
     }
 
-    private Unit createUnit(Node root) {
+    private static Unit createUnit(Node root) {
         Unit u = new Unit();
         u.setName(((Element)root).getAttribute("name"));
         //Get employees list
         List<Employee> employees = new ArrayList<Employee>();
         List<Node> unitEmployees = getNodeList("employee", root.getChildNodes());
-        LOGGER.debug("" + unitEmployees.size());
         for (Node e: unitEmployees) {
             employees.add(createEmployee(e));
         }
@@ -78,19 +70,20 @@ public class MainController {
         return u;
     }
 
-    private Employee createEmployee(Node root) {
+    private static Employee createEmployee(Node root) {
+        //TODO: validate existence of attribute
         Employee e = new Employee();
         Element eleroot = (Element)  root;
         e.setId(Integer.parseInt(eleroot.getAttribute("id")));
-        e.setEmail(eleroot.getAttribute("id"));
-        e.setFio(eleroot.getAttribute("id"));
-        e.setPosition(eleroot.getAttribute("id"));
-        e.setRoom(eleroot.getAttribute("id"));
-        e.setTel(eleroot.getAttribute("id"));
+        e.setEmail(eleroot.getAttribute("email"));
+        e.setFio(eleroot.getAttribute("fio"));
+        e.setPosition(eleroot.getAttribute("position"));
+        e.setRoom(eleroot.getAttribute("room"));
+        e.setTel(eleroot.getAttribute("tel"));
         try {
             e.setTel2(eleroot.getAttribute("tel2"));
         } catch (Exception ex) {
-           LOGGER.debug("TEL2 for employee " + e.getId() + " not presented");
+            LOGGER.debug("TEL2 for employee " + e.getId() + " not presented");
         }
         return e;
     }
@@ -106,7 +99,7 @@ public class MainController {
         return res;
     }
 
-    private List<Node> getNodeList(String name, NodeList list) {
+    private static List<Node> getNodeList(String name, NodeList list) {
         List<Node> nl = new ArrayList<Node>();
         for (int i = 0; i < list.getLength(); i++) {
             Node n = list.item(i);
@@ -117,7 +110,7 @@ public class MainController {
         return nl;
     }
 
-    private Node getNode(String name, NodeList list) {
+    private static Node getNode(String name, NodeList list) {
         Node n = null;
         for (int i = 0; i < list.getLength(); i++) {
             n = list.item(i);
@@ -126,37 +119,5 @@ public class MainController {
             }
         }
         return n;
-    }
-
-    private void doNodes(Node n) {
-        NodeList nodes = n.getChildNodes();
-        for (int i = 0; i < nodes.getLength(); i++) {
-            Node n_ = nodes.item(i);
-            if (n_ == null) {
-                continue;
-            }
-            doNode(n);
-        }
-    }
-
-    private void doNode(Node n) {
-        switch (n.getNodeType()) {
-            case Node.ELEMENT_NODE:
-                System.out.println("ELEMENT<" + n.getNodeName() + ">");
-                doNodes(n);
-                break;
-            case Node.TEXT_NODE:
-                String text = n.getNodeValue();
-                if (text.length() == 0 ||
-                        text.equals("\n") || text.equals("\\r")) {
-                    break;
-                }
-                System.out.println("TEXT: " + text);
-                break;
-            default:
-                System.err.println("OTHER NODE " +
-                        n.getNodeType() + ": " + n.getClass());
-                break;
-        }
     }
 }

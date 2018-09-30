@@ -14,7 +14,4 @@
        (@Component, @Service) Spring MVC @Controller -->
     <context:component-scan base-package="org.depo" />
     <!-- ================================================================================= -->
-
-    <mvc:view-controller path="/" view-name="index"/>
-
 </beans>

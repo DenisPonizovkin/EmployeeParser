@@ -88,6 +88,24 @@ public class Employee {
 
 	@Override
 	public String toString() {
-		return "EMPLOYEE-" + id + fio + ',' + position + ',' + email + 'm' + tel + "," + tel2 + "," + room;
+		String out = "EMPLOYEE-" + id + "," + fio + ',' + position + ',' + email + ',' + tel + ",";
+		if (!tel2.isEmpty()) {
+			out += tel2;
+		}
+		out += "," + room;
+		return out;
+	}
+
+	@Override
+	public int hashCode() {
+		int hash = 0;
+		hash += (int) (id ^ (id >>> 32));
+		return 31 * 17 + hash;
+	}
+
+	@Override
+	public boolean equals(Object o) {
+	    Employee e = (Employee) o;
+	    return e.getId() == this.getId();
 	}
 }

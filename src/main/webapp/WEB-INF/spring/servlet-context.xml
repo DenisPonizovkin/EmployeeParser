@@ -10,10 +10,9 @@
 
     <mvc:annotation-driven />
 
+    <mvc:view-controller path="/" view-name="redirect:/Veterok/EmployeeList"/>
     <context:component-scan base-package="org.depo"/>
-
-    <bean
-            class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+    <bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
         <property name="prefix" value="/WEB-INF/view/" />
         <property name="suffix" value=".jsp" />
     </bean>
