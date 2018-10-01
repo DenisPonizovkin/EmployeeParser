@@ -129,7 +129,7 @@ public class Unit {
         boolean ok = false;
         int id = 0;
         for (Employee e_: getEmployees()) {
-            if (e_.getId() == e_.getId()) {
+            if (e.getId() == e_.getId()) {
                 ok = true;
                 break;
             }
@@ -162,5 +162,37 @@ public class Unit {
 
     private void replaceEmployee_(Employee e, int id) {
         employees.set(id, e);
+    }
+
+    public Employee findEmployeeByPosition(String position) {
+        Employee res = null;
+        for (Employee e: getEmployees()) {
+            if (e.getPosition().equals(position)) {
+                res = e;
+                break;
+            }
+        }
+        if (res == null) {
+            for (Unit u: units) {
+                if (u.getUnits().size() > 0) {
+                    res = u.findEmployeeByPosition(name);
+                }
+
+                if (res == null) {
+                    for (Employee e: u.getEmployees()) {
+                        if (e.getPosition().equals(position)) {
+                            res = e;
+                            break;
+                        }
+                    }
+                }
+
+                if (res != null) {
+                    break;
+                }
+            }
+        }
+
+        return res;
     }
 }
