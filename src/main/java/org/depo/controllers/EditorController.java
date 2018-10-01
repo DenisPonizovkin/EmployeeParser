@@ -2,6 +2,8 @@ package org.depo.controllers;
 
 import org.apache.log4j.Logger;
 import org.depo.model.*;
+import org.depo.service.EmployeeService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -14,6 +16,9 @@ public class EditorController {
 
     private final static Logger LOGGER = Logger.getLogger(EditorController.class);
     String error = "";
+
+    @Autowired
+    EmployeeService employeeService;
 
     @RequestMapping(value = "edit", method = RequestMethod.POST)
     public String userIface(Model model, @ModelAttribute("processInfo") ProcessInfo info, RedirectAttributes ra) {
@@ -56,7 +61,7 @@ public class EditorController {
 
     private String editEmployee(Model model, ProcessInfo info) {
         String out = "";
-        Employee e = EmployeeList.getInstance().findEmployeeById(Integer.parseInt(info.getEid()));
+        Employee e = employeeService.findEmployeeById(Integer.parseInt(info.getEid()));
         if (e == null) {
             error = "No such employee <" + info.getEid() + ">";
         } else {
@@ -76,7 +81,7 @@ public class EditorController {
         if (info.getUid().equals("Руководство")) {
             error = "You cant edit unit <Руководство>";
         } else {
-            Unit u = EmployeeList.getInstance().findUnitByName(info.getUid());
+            Unit u = employeeService.findUnitByName(info.getUid());
             if (u == null) {
                 error = "No such unit <" + info.getUid() + ">";
             } else {
@@ -93,12 +98,28 @@ public class EditorController {
     private String add(Model model, ProcessInfo info) {
         String out = "";
         if (!info.getUid().isEmpty() && !info.getUid().isEmpty()) {
-            EmployeeForm ef = new EmployeeForm();
-            ef.setEmployee(new Employee());
-            ef.setOldId(-1);
-            ef.setUnitName(info.getUid());
-            model.addAttribute("employeeForm", ef);
-            out = "redirect:/employee_form";
+            boolean ok = true;
+            if (info.getUid().equals("Генеральный директор")) {
+                Unit u = employeeService.findUnitByName(info.getUid());
+                if (u == null) {
+                    error = "No such employee <" + info.getEid() + ">";
+                    ok = false;
+                } else {
+                    Employee e = employeeService.findEmployeeByPosition("Генеральный директор");
+                    if (e != null) {
+                        error = "The position of the Генеральный директор may be in a single copy";
+                        ok = false;
+                    }
+                }
+            }
+            if (ok) {
+                EmployeeForm ef = new EmployeeForm();
+                ef.setEmployee(new Employee());
+                ef.setOldId(-1);
+                ef.setUnitName(info.getUid());
+                model.addAttribute("employeeForm", ef);
+                out = "redirect:/employee_form";
+            }
         } else if (!info.getUid().isEmpty()) {
             UnitForm uf = new UnitForm();
             uf.setUnit(new Unit());
@@ -138,14 +159,14 @@ public class EditorController {
 
     private String deleteEmployee(ProcessInfo info) {
         String error = "";
-        Employee e = EmployeeList.getInstance().findEmployeeById(Integer.parseInt(info.getEid()));
+        Employee e = employeeService.findEmployeeById(Integer.parseInt(info.getEid()));
         if (e == null) {
             error = "No such employee <" + info.getEid() + ">";
         } else {
             if (e.getPosition().equals("Генеральный директор")) {
                 error = "You cant delete employee <Генеральный директор>";
             } else {
-                EmployeeList.getInstance().removeEmployee(e);
+                employeeService.removeEmployee(e);
             }
         }
 
@@ -157,13 +178,13 @@ public class EditorController {
         if (info.getUid().equals("Руководство")) {
             error = "You cant delete unit <Руководство>";
         } else {
-            Unit u = EmployeeList.getInstance().findUnitByName(info.getUid());
+            Unit u = employeeService.findUnitByName(info.getUid());
             if (u == null) {
                 error = "No such unit <" + info.getUid() + ">";
             } else if (u.getEmployees().size() > 0) {
                 error = "Unit is not empty";
             } else {
-                EmployeeList.getInstance().removeUnit(u);
+                employeeService.removeUnit(u);
             }
         }
         return error;
@@ -173,9 +194,9 @@ public class EditorController {
     public String processUnit(Model model, @ModelAttribute("unitForm") UnitForm uf, RedirectAttributes ra) {
         try {
             if (uf.getOldName().isEmpty()) {
-                EmployeeList.getInstance().add(uf.getUnit());
+                employeeService.addUnit(uf.getUnit());
             } else {
-                EmployeeList.getInstance().replaceUnit(uf.getUnit(), uf.getOldName());
+                employeeService.replaceUnit(uf.getUnit(), uf.getOldName());
             }
         } catch (Exception e) {
             ra.addAttribute("error", e.getMessage());
@@ -187,10 +208,10 @@ public class EditorController {
     public String processEmployee(Model model, @ModelAttribute("employeeForm") EmployeeForm ef, RedirectAttributes ra) {
         try {
             if (ef.getOldId() == -1) {
-                EmployeeList.getInstance().addEmployee(ef.getEmployee(), ef.getUnitName());
+                employeeService.addEmployee(ef.getEmployee(), ef.getUnitName());
             } else {
                 //TODO: validate
-                EmployeeList.getInstance().replaceEmployee(ef.getEmployee(), ef.getOldId());
+                employeeService.replaceEmployee(ef.getEmployee(), ef.getOldId());
             }
         } catch (Exception e) {
             ra.addAttribute("error", e.getMessage());

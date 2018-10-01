@@ -1,35 +1,21 @@
-package org.depo.model;
+package org.depo.service;
 
-import org.springframework.beans.factory.config.ConfigurableBeanFactory;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Scope;
-import org.springframework.security.core.parameters.P;
+import org.depo.model.Employee;
+import org.depo.model.Unit;
+import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
-@XmlRootElement(name = "employees")
-@XmlAccessorType(XmlAccessType.FIELD)
-public class EmployeeList {
+@Component
+@Service("employeeService")
+public class EmployeeServiceImpl implements EmployeeService {
 
     private List<Unit> units = new ArrayList<Unit>();
-    private static EmployeeList instance;
 
-    private EmployeeList() { }
+    private EmployeeServiceImpl() { }
 
-    public static synchronized EmployeeList getInstance(){
-        if(instance == null){
-            instance = new EmployeeList();
-        }
-        return instance;
-    }
-
-    @XmlElement(name="unit")
     public List<Unit> getUnits() {
         return units;
     }
@@ -93,7 +79,7 @@ public class EmployeeList {
         }
     }
 
-    private int findUnitIdByName(String name) {
+    public int findUnitIdByName(String name) {
         Unit res = null;
 
         int i = 0;
@@ -111,7 +97,7 @@ public class EmployeeList {
        return i;
     }
 
-    public void add(Unit unit) {
+    public void addUnit(Unit unit) {
         units.add(unit);
     }
 
@@ -130,5 +116,19 @@ public class EmployeeList {
               break;
            }
         }
+    }
+
+    @Override
+    public Employee findEmployeeByPosition(String position) {
+        Employee res = null;
+
+        for (Unit u: units) {
+            res = u.findEmployeeByPosition(position);
+            if (res != null) {
+                break;
+            }
+        }
+
+        return res;
     }
 }

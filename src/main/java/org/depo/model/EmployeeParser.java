@@ -1,8 +1,8 @@
 package org.depo.model;
 
 import org.apache.log4j.Logger;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.support.ClassPathXmlApplicationContext;
+import org.depo.service.EmployeeService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -21,22 +21,23 @@ public class EmployeeParser {
 
     private final static Logger LOGGER = Logger.getLogger(EmployeeParser.class);
 
-    public static void parse() {
+    public void parse(EmployeeService employeeService) {
         try {
             DocumentBuilderFactory docBuilderFactory = DocumentBuilderFactory.newInstance();
             DocumentBuilder docBuilder = docBuilderFactory.newDocumentBuilder();
-            Document doc = docBuilder.parse (new File("/home/denis/tmp/test.xml"));
-            // normalize text representation
+
+            String fpath = System.getProperty("catalina.home") + "/test.xml";
+            LOGGER.debug("Read file " + fpath);
+
+            Document doc = docBuilder.parse (new File(fpath));
             doc.getDocumentElement ().normalize ();
 
             NodeList root = doc.getChildNodes();
             Node employees = getNode("employees", root);
-            //Node units = getNode("unit", employees.getChildNodes());
-            //Node employee = getNode("employee", units.getChildNodes());
             List<Node> units = getNodeList("unit", employees.getChildNodes());
             for (Node u: units) {
                 Unit unit = createUnit(u);
-                EmployeeList.getInstance().addNode(unit);
+                employeeService.addNode(unit);
                 LOGGER.debug("\n" + unit);
             }
         } catch (ParserConfigurationException e) {

@@ -1,28 +1,20 @@
 package org.depo.controllers;
 
-import org.apache.log4j.Logger;
-import org.depo.model.EmployeeList;
+import org.depo.model.EmployeeParser;
+import org.depo.service.EmployeeService;
 import org.depo.model.ProcessInfo;
 import org.depo.model.Unit;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.servlet.ModelAndView;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
 
-import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
-import javax.xml.bind.Marshaller;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import java.io.File;
-import java.util.List;
+import javax.xml.transform.TransformerException;
+import org.apache.log4j.Logger;
 
 @Controller
 public class MainInterfaceController {
@@ -31,46 +23,18 @@ public class MainInterfaceController {
 
     private final static Logger LOGGER = Logger.getLogger(MainInterfaceController.class);
 
+    @Autowired
+    EmployeeService employeeService;
+
+    private final EmployeeParser ep = new EmployeeParser();
+
     @RequestMapping(value = "Veterok/EmployeeList", method = RequestMethod.GET)
-    public String userIface(Model model, @ModelAttribute("error") String error) throws JAXBException, ParserConfigurationException {
+    public String userIface(Model model, @ModelAttribute("error") String error) throws JAXBException, ParserConfigurationException, TransformerException {
 
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-        DocumentBuilder builder = factory.newDocumentBuilder();
-        Document doc = builder.newDocument();
-
-        Element root = doc.createElementNS("", "employees");
-        doc.appendChild(root);
-
-        for (Unit u: EmployeeList.getInstance().getUnits()) {
-                    Element user = doc.createElement("user");
-
-        user.setAttribute("id", id);
-        user.appendChild(createUserElement(doc, "firstname", firstName));
-        user.appendChild(createUserElement(doc, "lastname", lastName));
-        user.appendChild(createUserElement(doc, "occupation", occupation));
-            root.appendChild(u);
-        }
-
-        TransformerFactory transformerFactory = TransformerFactory.newInstance();
-        Transformer transf = transformerFactory.newTransformer();
-
-        transf.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
-        transf.setOutputProperty(OutputKeys.INDENT, "yes");
-        transf.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
-
-        DOMSource source = new DOMSource(doc);
-
-        File myFile = new File("src/main/resources/users.xml");
-
-        StreamResult console = new StreamResult(System.out);
-        StreamResult file = new StreamResult(myFile);
-
-        transf.transform(source, console);
-        transf.transform(source, file);
-
+        //ep.parse();
         String out = "";
-        for (Unit u: EmployeeList.getInstance().getUnits()) {
-           out += u;
+        for (Unit u: employeeService.getUnits()) {
+            out += u;
         }
         out = out.replace("\n", "<br/>");
         out = out.replace("\t", "&emsp;");
