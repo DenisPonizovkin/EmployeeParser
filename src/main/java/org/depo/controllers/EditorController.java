@@ -48,12 +48,11 @@ public class EditorController {
             boolean isUid = !info.getUid().isEmpty();
             boolean isEid = !info.getEid().isEmpty();
             if (isUid && isEid) {
-                error = "You can't edit unit and employee simultaneously";
-            }
-            if (!info.getUid().isEmpty()) {
-                out = editUnit(model, info);
-            } else {
                 out = editEmployee(model, info);
+            } else if (isEid) {
+                out = editEmployee(model, info);
+            } else if (isUid) {
+                out = editUnit(model, info);
             }
         }
         return out;
@@ -61,7 +60,13 @@ public class EditorController {
 
     private String editEmployee(Model model, ProcessInfo info) {
         String out = "";
-        Employee e = employeeService.findEmployeeById(Integer.parseInt(info.getEid()));
+        Employee e = null;
+        if (info.getUid().isEmpty()) {
+            e = employeeService.findEmployeeById(Integer.parseInt(info.getEid()));
+        } else {
+            e = employeeService.findEmployeeByIdAndUnitName(info.getUid(), Integer.parseInt(info.getEid()));
+        }
+        employeeService.findEmployeeById(Integer.parseInt(info.getEid()));
         if (e == null) {
             error = "No such employee <" + info.getEid() + ">";
         } else {
@@ -97,7 +102,33 @@ public class EditorController {
 
     private String add(Model model, ProcessInfo info) {
         String out = "";
-        if (!info.getUid().isEmpty() && !info.getUid().isEmpty()) {
+        if (!info.getUid().isEmpty() && !info.getEid().isEmpty()) {
+            out = addEmployee(model, info);
+        } else if (!info.getUid().isEmpty()) {
+            out = addUnit(model, info);
+        } else {
+            error = "Set employee id or both unit id and employee id";
+        }
+        return out;
+    }
+
+    private String addUnit(Model model, ProcessInfo info) {
+        String out = "";
+        if (employeeService.findUnitByName(info.getUid()) == null) {
+            Unit u = new Unit();
+            u.setName(info.getUid());
+            employeeService.addUnit(u);
+        } else {
+            error = "Unit with this name exists already";
+        }
+        return out;
+    }
+
+    private String addEmployee(Model model, ProcessInfo info) {
+        String out = "";
+        if (employeeService.findUnitByName(info.getUid()) == null) {
+            error = "No such unit";
+        } else {
             boolean ok = true;
             if (info.getUid().equals("Генеральный директор")) {
                 Unit u = employeeService.findUnitByName(info.getUid());
@@ -113,21 +144,29 @@ public class EditorController {
                 }
             }
             if (ok) {
-                EmployeeForm ef = new EmployeeForm();
-                ef.setEmployee(new Employee());
-                ef.setOldId(-1);
-                ef.setUnitName(info.getUid());
-                model.addAttribute("employeeForm", ef);
-                out = "redirect:/employee_form";
+                Employee e = employeeService.findEmployeeById(Integer.parseInt(info.getEid()));
+                ok = true;
+                if (e != null) {
+                    for (Unit u: employeeService.findUnitOfEmployee(e)) {
+                       if (u.getName().equals(info.getUid())) {
+                           error = "Employee with this id exists already in the unit";
+                           ok = false;
+                           break;
+                       }
+                    }
+                }
+                if (ok) {
+                    // Employee with this id exists in the other unit
+                    EmployeeForm ef = new EmployeeForm();
+                    e = new Employee();
+                    e.setId(Integer.parseInt(info.getEid()));
+                    ef.setEmployee(e);
+                    ef.setOldId(-1);
+                    ef.setUnitName(info.getUid());
+                    model.addAttribute("employeeForm", ef);
+                    out = "employee_form";
+                }
             }
-        } else if (!info.getUid().isEmpty()) {
-            UnitForm uf = new UnitForm();
-            uf.setUnit(new Unit());
-            uf.setOldName("");
-            model.addAttribute("unitForm", uf);
-            out = "redirect:/unit_form";
-        } else {
-            error = "Set unit id or both unit id and employee id";
         }
         return out;
     }
@@ -140,7 +179,9 @@ public class EditorController {
             error = "Set at least one id";
         }
         try {
-            Integer.parseInt(info.getEid());
+            if (isEid) {
+                Integer.parseInt(info.getEid());
+            }
         } catch (Exception e) {
             error = "Set valid integer ID";
         }
@@ -149,7 +190,9 @@ public class EditorController {
 
     private String delete(ProcessInfo info) {
         String error = "";
-        if (!info.getUid().isEmpty()) {
+        if (!info.getUid().isEmpty() && !info.getEid().isEmpty()) {
+            error = deleteEmployee(info);
+        } else if (info.getEid().isEmpty()) {
             error = deleteUnit(info);
         } else {
             error = deleteEmployee(info);
@@ -166,7 +209,11 @@ public class EditorController {
             if (e.getPosition().equals("Генеральный директор")) {
                 error = "You cant delete employee <Генеральный директор>";
             } else {
-                employeeService.removeEmployee(e);
+                if (!info.getUid().isEmpty() && !info.getEid().isEmpty()) {
+                    employeeService.removeEmployeeOfUnit(e, employeeService.findUnitByName(info.getUid()));
+                } else {
+                    employeeService.removeEmployee(e);
+                }
             }
         }
 
