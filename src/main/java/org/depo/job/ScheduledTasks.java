@@ -1,50 +1,63 @@
 package org.depo.job;
 
-import org.apache.log4j.Logger;
 import org.depo.model.Employee;
-import org.depo.service.EmployeeService;
-import org.depo.service.EmployeeServiceImpl;
 import org.depo.model.Unit;
-import org.quartz.Job;
-import org.quartz.JobExecutionContext;
-import org.quartz.JobExecutionException;
+import org.depo.service.EmployeeService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.apache.log4j.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import java.io.File;
+import java.util.Date;
 
 @Component
-public class SaveJob implements Job {
+public class ScheduledTasks {
 
-    private final static Logger LOGGER = Logger.getLogger(SaveJob.class);
+    private final static Logger LOGGER = Logger.getLogger(ScheduledTasks.class);
+    //private final DocumentBuilderFactory dbFactory;
+    //private final DocumentBuilder dBuilder;
+    //private Document doc;
 
     @Autowired
-    EmployeeService employeeService;
+    private EmployeeService employeeService;
 
-    @Override
-    public void execute(JobExecutionContext context) throws JobExecutionException {
+    public ScheduledTasks() throws ParserConfigurationException {
+        //dbFactory = DocumentBuilderFactory.newInstance();
+        //dBuilder = dbFactory.newDocumentBuilder();
+        //doc = dBuilder.newDocument();
+    }
+
+
+    @Scheduled(fixedRate = 60000)
+    public void job() {
+
         LOGGER.debug("Save employees data");
-        DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
-        DocumentBuilder dBuilder = null;
         try {
-            dBuilder = dbFactory.newDocumentBuilder();
+            DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+            DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
             Document doc = dBuilder.newDocument();
+
+            if (doc == null) {
+                doc = dBuilder.newDocument();
+            }
             //add elements to Document
             Element rootElement =
                     doc.createElementNS("https://www.journaldev.com/employee", "employees");
             //append root element to document
             doc.appendChild(rootElement);
-            appendUnits(doc, rootElement);
+            appendUnits(doc, rootElement, employeeService);
             //for output to file, console
             TransformerFactory transformerFactory = TransformerFactory.newInstance();
             Transformer transformer = transformerFactory.newTransformer();
@@ -54,7 +67,7 @@ public class SaveJob implements Job {
 
             //write to console or file
             StreamResult console = new StreamResult(System.out);
-            StreamResult file = new StreamResult(new File("/home/denis/tmp/test.xml"));
+            StreamResult file = new StreamResult(new File(System.getProperty("catalina.home") + "/test.xml"));
 
             //write data
             transformer.transform(source, console);
@@ -63,9 +76,10 @@ public class SaveJob implements Job {
         } catch (Exception e) {
             LOGGER.error(e.getMessage());
         }
+
     }
 
-    private void appendUnits(Document doc, Element rootElement) {
+    private void appendUnits(Document doc, Element rootElement, EmployeeService employeeService) {
         for (Unit u: employeeService.getUnits()) {
             rootElement.appendChild(appendUnit(doc, rootElement, u));
         }
@@ -105,4 +119,5 @@ public class SaveJob implements Job {
 
         return employee;
     }
+
 }
