@@ -20,4 +20,7 @@ public interface EmployeeService {
     public void addEmployee(Employee employee, String unitName);
     public void replaceEmployee(Employee e, int oldId);
     Employee findEmployeeByPosition(String генеральный_директор);
+    List<Unit> findUnitOfEmployee(Employee e);
+    Employee findEmployeeByIdAndUnitName(String uid, int i);
+    boolean removeEmployeeOfUnit(Employee e, Unit unitByName);
 }

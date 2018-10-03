@@ -195,4 +195,45 @@ public class Unit {
 
         return res;
     }
+
+    public Unit findUnitByName(String name) {
+        Unit u = null;
+        if (getName().equals(name)) {
+           u = this;
+        } else {
+            for (Unit subu: getUnits()) {
+                u = subu.findUnitByName(name);
+                if (u != null) {
+                    break;
+                }
+            }
+        }
+        return u;
+    }
+
+    public Employee findEmployeeByIdAndUnitName(String uid, int i) {
+        Employee res = null;
+        if (getName().equals(uid)) {
+            res = findEmployeeById(i);
+            if (res == null) {
+                for (Unit subu: getUnits()) {
+                    res = subu.findEmployeeByIdAndUnitName(uid, i);
+                    if (res != null) {
+                        break;
+                    }
+                }
+            }
+        }
+        return res;
+    }
+
+    public void addEmployee(String unitName, Employee employee) {
+        if (unitName.equals(getName())) {
+           addEmployee(employee);
+        } else {
+            for (Unit u: getUnits()) {
+               u.addEmployee(unitName, employee);
+            }
+        }
+    }
 }

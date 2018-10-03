@@ -40,6 +40,10 @@ public class EmployeeServiceImpl implements EmployeeService {
                 res = u;
                 break;
             }
+            res = u.findUnitByName(name);
+            if (res != null) {
+               break;
+            }
         }
 
         return res;
@@ -107,6 +111,9 @@ public class EmployeeServiceImpl implements EmployeeService {
               u.addEmployee(employee);
               break;
            }
+           for (Unit subu: u.getUnits()) {
+              subu.addEmployee(unitName, employee);
+           }
         }
     }
 
@@ -130,5 +137,56 @@ public class EmployeeServiceImpl implements EmployeeService {
         }
 
         return res;
+    }
+
+    @Override
+    public List<Unit> findUnitOfEmployee(Employee e) {
+        List<Unit> res = new ArrayList<>();
+        for (Unit u: units) {
+            for (Unit subu: u.getUnits()) {
+               if (subu.findEmployeeById(e.getId()) != null) {
+                   res.add(subu);
+               }
+            }
+        }
+        for (Unit u: units) {
+            if (u.findEmployeeById(e.getId()) != null) {
+                res.add(u);
+            }
+        }
+        return res;
+    }
+
+    @Override
+    public Employee findEmployeeByIdAndUnitName(String uid, int i) {
+        Employee res = null;
+        for (Unit u: units) {
+            Employee e = u.findEmployeeById(i);
+            if (e != null) {
+                if (u.getName().equals(uid)) {
+                    res = e;
+                    break;
+                }
+            }
+            e = u.findEmployeeByIdAndUnitName(uid, i);
+            if (e != null) {
+                break;
+            }
+        }
+        return res;
+    }
+
+    @Override
+    public boolean removeEmployeeOfUnit(Employee e, Unit u) {
+        List<Unit> list = findUnitOfEmployee(e);
+        boolean ok = false;
+        for (Unit u_: list) {
+           if (u_.getName().equals(u.getName())) {
+              u_.removeEmployee(e);
+              ok = true;
+              break;
+           }
+        }
+        return ok;
     }
 }
