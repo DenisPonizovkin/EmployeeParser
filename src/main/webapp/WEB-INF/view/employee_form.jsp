@@ -16,7 +16,7 @@
 <body>
 <form:form action="${pageContext.request.contextPath}/process_employee" method="post" modelAttribute="employeeForm">
                 Табельный номер сотрудника
-                <form:textarea path="employee.id" name="id" id="id" rows="1" cols="50"/>
+                <form:textarea path="employee.id" name="id" id="id" rows="1" cols="50"  readonly="true"/>
                 <br/>
 
             ФИО
